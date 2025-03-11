@@ -3,10 +3,29 @@ import kotlin.wasm.unsafe.Pointer
 import kotlin.wasm.unsafe.UnsafeWasmMemoryApi
 import kotlin.wasm.unsafe.withScopedMemoryAllocator
 
-fun main() {
-    println("Hello from Kotlin via WASI")
-    println("Current 'realtime' timestamp is: ${wasiRealTime()}")
-    println("Current 'monotonic' timestamp is: ${wasiMonotonicTime()}")
+fun main(args: Array<String>) {
+    val defaultThreshold = 100_000
+    val threshold = args.getOrNull(0)?.toIntOrNull() ?: defaultThreshold
+    println("Benchmarking prime computation up to $threshold")
+
+    val start = wasiMonotonicTime()
+    val primes = computePrimes(threshold)
+    val end = wasiMonotonicTime()
+
+    val elapsedTimeSeconds = (end - start) / 1_000_000_000.0
+
+    println("Found ${primes.size} prime numbers up to $threshold")
+    println("Execution time: $elapsedTimeSeconds seconds")
+}
+
+fun computePrimes(limit: Int): List<Int> {
+    val primes = mutableListOf<Int>()
+    for (i in 2..limit) {
+        if (primes.none { i % it == 0 }) {
+            primes.add(i)
+        }
+    }
+    return primes
 }
 
 @WasmImport("wasi_snapshot_preview1", "clock_time_get")
